@@ -71,8 +71,6 @@ def list_get(xs, i):
 
 R = _R(0)
 src = Extendlist()
-regexp = {}
-
 # The following Regular Expressions can be used for tokenizing,
 # validating, and parsing SemVer version strings.
 
@@ -98,8 +96,7 @@ src[NONNUMERICIDENTIFIER] = "\\d*[a-zA-Z-][a-zA-Z0-9-]*"
 
 MAINVERSION = R()
 src[MAINVERSION] = (
-    "("
-    + src[NUMERICIDENTIFIER]
+    f"({src[NUMERICIDENTIFIER]}"
     + ")\\."
     + "("
     + src[NUMERICIDENTIFIER]
@@ -111,8 +108,7 @@ src[MAINVERSION] = (
 
 MAINVERSIONLOOSE = R()
 src[MAINVERSIONLOOSE] = (
-    "("
-    + src[NUMERICIDENTIFIERLOOSE]
+    f"({src[NUMERICIDENTIFIERLOOSE]}"
     + ")\\."
     + "("
     + src[NUMERICIDENTIFIERLOOSE]
@@ -127,12 +123,14 @@ src[MAINVERSIONLOOSE] = (
 # A numeric identifier, or a non-numeric identifier.
 
 PRERELEASEIDENTIFIER = R()
-src[PRERELEASEIDENTIFIER] = "(?:" + src[NUMERICIDENTIFIER] + "|" + src[NONNUMERICIDENTIFIER] + ")"
+src[
+    PRERELEASEIDENTIFIER
+] = f"(?:{src[NUMERICIDENTIFIER]}|{src[NONNUMERICIDENTIFIER]})"
 
 PRERELEASEIDENTIFIERLOOSE = R()
-src[PRERELEASEIDENTIFIERLOOSE] = (
-    "(?:" + src[NUMERICIDENTIFIERLOOSE] + "|" + src[NONNUMERICIDENTIFIER] + ")"
-)
+src[
+    PRERELEASEIDENTIFIERLOOSE
+] = f"(?:{src[NUMERICIDENTIFIERLOOSE]}|{src[NONNUMERICIDENTIFIER]})"
 
 
 # ## Pre-release Version
@@ -141,12 +139,18 @@ src[PRERELEASEIDENTIFIERLOOSE] = (
 
 PRERELEASE = R()
 src[PRERELEASE] = (
-    "(?:-(" + src[PRERELEASEIDENTIFIER] + "(?:\\." + src[PRERELEASEIDENTIFIER] + ")*))"
+    f"(?:-({src[PRERELEASEIDENTIFIER]}"
+    + "(?:\\."
+    + src[PRERELEASEIDENTIFIER]
+    + ")*))"
 )
 
 PRERELEASELOOSE = R()
 src[PRERELEASELOOSE] = (
-    "(?:-?(" + src[PRERELEASEIDENTIFIERLOOSE] + "(?:\\." + src[PRERELEASEIDENTIFIERLOOSE] + ")*))"
+    f"(?:-?({src[PRERELEASEIDENTIFIERLOOSE]}"
+    + "(?:\\."
+    + src[PRERELEASEIDENTIFIERLOOSE]
+    + ")*))"
 )
 
 # ## Build Metadata Identifier
@@ -172,9 +176,9 @@ src[BUILD] = "(?:\\+(" + src[BUILDIDENTIFIER] + "(?:\\." + src[BUILDIDENTIFIER] 
 #  comparison.
 
 FULL = R()
-FULLPLAIN = "v?" + src[MAINVERSION] + src[PRERELEASE] + "?" + src[BUILD] + "?"
+FULLPLAIN = f"v?{src[MAINVERSION]}{src[PRERELEASE]}?{src[BUILD]}?"
 
-src[FULL] = "^" + FULLPLAIN + "$"
+src[FULL] = f"^{FULLPLAIN}$"
 
 #  like full, but allows v1.2.3 and =1.2.3, which people do sometimes.
 #  also, 1.0.0alpha1 (prerelease without the hyphen) which is pretty
@@ -182,7 +186,7 @@ src[FULL] = "^" + FULLPLAIN + "$"
 LOOSEPLAIN = "[v=\\s]*" + src[MAINVERSIONLOOSE] + src[PRERELEASELOOSE] + "?" + src[BUILD] + "?"
 
 LOOSE = R()
-src[LOOSE] = "^" + LOOSEPLAIN + "$"
+src[LOOSE] = f"^{LOOSEPLAIN}$"
 
 GTLT = R()
 src[GTLT] = "((?:<|>)?=?)"
@@ -234,9 +238,9 @@ src[XRANGEPLAINLOOSE] = (
 )
 
 XRANGE = R()
-src[XRANGE] = "^" + src[GTLT] + "\\s*" + src[XRANGEPLAIN] + "$"
+src[XRANGE] = f"^{src[GTLT]}" + "\\s*" + src[XRANGEPLAIN] + "$"
 XRANGELOOSE = R()
-src[XRANGELOOSE] = "^" + src[GTLT] + "\\s*" + src[XRANGEPLAINLOOSE] + "$"
+src[XRANGELOOSE] = f"^{src[GTLT]}" + "\\s*" + src[XRANGEPLAINLOOSE] + "$"
 
 #  Tilde ranges.
 #  Meaning is "reasonably at or greater than"
@@ -245,13 +249,13 @@ src[LONETILDE] = "(?:~>?)"
 
 TILDETRIM = R()
 src[TILDETRIM] = "(\\s*)" + src[LONETILDE] + "\\s+"
-regexp[TILDETRIM] = re.compile(src[TILDETRIM], re.M)
+regexp = {TILDETRIM: re.compile(src[TILDETRIM], re.M)}
 tildeTrimReplace = r"\1~"
 
 TILDE = R()
-src[TILDE] = "^" + src[LONETILDE] + src[XRANGEPLAIN] + "$"
+src[TILDE] = f"^{src[LONETILDE]}{src[XRANGEPLAIN]}$"
 TILDELOOSE = R()
-src[TILDELOOSE] = "^" + src[LONETILDE] + src[XRANGEPLAINLOOSE] + "$"
+src[TILDELOOSE] = f"^{src[LONETILDE]}{src[XRANGEPLAINLOOSE]}$"
 
 #  Caret ranges.
 #  Meaning is "at least and backwards compatible with"
@@ -264,15 +268,15 @@ regexp[CARETTRIM] = re.compile(src[CARETTRIM], re.M)
 caretTrimReplace = r"\1^"
 
 CARET = R()
-src[CARET] = "^" + src[LONECARET] + src[XRANGEPLAIN] + "$"
+src[CARET] = f"^{src[LONECARET]}{src[XRANGEPLAIN]}$"
 CARETLOOSE = R()
-src[CARETLOOSE] = "^" + src[LONECARET] + src[XRANGEPLAINLOOSE] + "$"
+src[CARETLOOSE] = f"^{src[LONECARET]}{src[XRANGEPLAINLOOSE]}$"
 
 #  A simple gt/lt/eq thing, or just "" to indicate "any version"
 COMPARATORLOOSE = R()
-src[COMPARATORLOOSE] = "^" + src[GTLT] + "\\s*(" + LOOSEPLAIN + ")$|^$"
+src[COMPARATORLOOSE] = f"^{src[GTLT]}" + "\\s*(" + LOOSEPLAIN + ")$|^$"
 COMPARATOR = R()
-src[COMPARATOR] = "^" + src[GTLT] + "\\s*(" + FULLPLAIN + ")$|^$"
+src[COMPARATOR] = f"^{src[GTLT]}" + "\\s*(" + FULLPLAIN + ")$|^$"
 
 
 #  An expression to strip any whitespace between the gtlt and the thing
@@ -326,27 +330,16 @@ for i in range(R.value()):
 
 def parse(version, loose):
     r = regexp[LOOSE] if loose else regexp[FULL]
-    m = r.search(version)
-    if m:
-        return semver(version, loose)
-    else:
-        return None
+    return semver(version, loose) if (m := r.search(version)) else None
 
 
 def valid(version, loose):
     v = parse(version, loose)
-    if v.version:
-        return v
-    else:
-        return None
+    return v if v.version else None
 
 
 def clean(version, loose):
-    s = parse(version, loose)
-    if s:
-        return s.version
-    else:
-        return None
+    return s.version if (s := parse(version, loose)) else None
 
 
 NUMERIC = re.compile(r"^\d+$")
@@ -403,17 +396,13 @@ class SemVer:
                 self.prerelease = [
                     (int(id_) if NUMERIC.search(id_) else id_) for id_ in m.group(4).split(".")
                 ]
-            if m.group(5):
-                self.build = m.group(5).split(".")
-            else:
-                self.build = []
-
+            self.build = m.group(5).split(".") if m.group(5) else []
         self.format()  # xxx:
 
     def format(self):  # noqa
         self.version = f"{self.major}.{self.minor}.{self.patch}"
         if len(self.prerelease) > 0:
-            self.version += "-{}".format(".".join(str(v) for v in self.prerelease))
+            self.version += f'-{".".join(str(v) for v in self.prerelease)}'
         return self.version
 
     def __repr__(self):
@@ -452,7 +441,7 @@ class SemVer:
             return 1
         elif is_self_more_than_zero and not is_other_more_than_zero:
             return -1
-        elif not is_self_more_than_zero and not is_other_more_than_zero:
+        elif not is_self_more_than_zero:
             return 0
 
         i = 0
@@ -572,13 +561,9 @@ def compare_identifiers(a, b):
         a = int(a)
         b = int(b)
 
-    if anum and not bnum:
+    if anum and not bnum or (not bnum or anum) and a < b:
         return -1
-    elif bnum and not anum:
-        return 1
-    elif a < b:
-        return -1
-    elif a > b:
+    elif bnum and not anum or a > b:
         return 1
     else:
         return 0
@@ -604,12 +589,7 @@ def make_key_function(loose):
     def key_function(version):
         v = make_semver(version, loose)
         key = (v.major, v.minor, v.patch)
-        if v.prerelease:  # noqa SIM108
-            key = key + tuple(v.prerelease)
-        else:
-            #  NOT having a prerelease is > having one
-            key = (*key, float("inf"))
-
+        key = key + tuple(v.prerelease) if v.prerelease else (*key, float("inf"))
         return key
 
     return key_function
@@ -661,7 +641,7 @@ def cmp(a, op, b, loose):  # noqa PLR0911
         return a == b
     elif op == "!==":
         return a != b
-    elif op == "" or op == "=" or op == "==":
+    elif op in ["", "=", "=="]:
         return eq(a, b, loose)
     elif op == "!=":
         return neq(a, b, loose)
@@ -702,10 +682,7 @@ class Comparator:
         self.loose = loose
         self.parse(comp)
 
-        if self.semver == ANY:
-            self.value = ""
-        else:
-            self.value = self.operator + self.semver.version
+        self.value = "" if self.semver == ANY else self.operator + self.semver.version
 
     def parse(self, comp):
         r = regexp[COMPARATORLOOSE] if self.loose else regexp[COMPARATOR]
@@ -717,10 +694,7 @@ class Comparator:
 
         self.operator = m.group(1)
         # if it literally is just '>' or '' then allow anything.
-        if m.group(2) is None:
-            self.semver = ANY
-        else:
-            self.semver = semver(m.group(2), self.loose)
+        self.semver = ANY if m.group(2) is None else semver(m.group(2), self.loose)
 
     def __repr__(self):
         return f'<SemVer Comparator "{self}">'
